@@ -2,19 +2,152 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meeting Scheduler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>📅 Meeting Scheduler</h1>
-    <form id="meetingForm">
-      <input type="text" id="title" placeholder="Meeting Title" required />
-      <input type="datetime-local" id="datetime" required />
-      <button type="submit">➕ Add Meeting</button>
-    </form>
-    <ul id="meetingList"></ul>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Meeting Scheduler home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false">
+            <path d="M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1.25A2.75 2.75 0 0 1 22 6.75v11.5A2.75 2.75 0 0 1 19.25 21H4.75A2.75 2.75 0 0 1 2 18.25V6.75A2.75 2.75 0 0 1 4.75 4H6V3a1 1 0 0 1 1-1Zm12.5 8h-15v8.25c0 .69.56 1.25 1.25 1.25h13.5c.69 0 1.25-.56 1.25-1.25V10ZM5.75 5.5c-.69 0-1.25.56-1.25 1.25V8.5h15V6.75c0-.69-.56-1.25-1.25-1.25H18v.75a1 1 0 1 1-2 0V5.5H8v.75a1 1 0 0 1-2 0V5.5h-.25Z"/>
+          </svg>
+        </span>
+        <span>
+          <strong>MeetFlow</strong>
+          <small>Meeting Scheduler</small>
+        </span>
+      </a>
+      <div class="topbar-actions">
+        <span class="sync-pill" id="syncStatus" role="status">Loading schedule</span>
+        <a class="ghost-link" href="#meetingForm">New meeting</a>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-section" aria-labelledby="pageTitle">
+        <div class="hero-copy">
+          <p class="eyebrow">Portfolio-ready scheduling workspace</p>
+          <h1 id="pageTitle">Plan meetings with clarity, context, and fewer loose ends.</h1>
+          <p class="hero-text">Create, organize, and track upcoming sessions from one polished dashboard.</p>
+        </div>
+
+        <div class="stats-grid" aria-label="Meeting summary">
+          <article class="stat-card">
+            <span class="stat-label">Total meetings</span>
+            <strong id="totalMeetings">0</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Upcoming</span>
+            <strong id="upcomingMeetings">0</strong>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">Confirmed</span>
+            <strong id="confirmedMeetings">0</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="workspace-grid">
+        <aside class="scheduler-panel" aria-labelledby="formTitle">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Quick schedule</p>
+              <h2 id="formTitle">Add Meeting</h2>
+            </div>
+            <span class="mode-badge" id="formMode">New</span>
+          </div>
+
+          <form id="meetingForm" novalidate>
+            <input type="hidden" id="editingId">
+
+            <div class="field-group">
+              <label for="title">Meeting title</label>
+              <input type="text" id="title" name="title" placeholder="Product roadmap sync" autocomplete="off" required>
+              <p class="field-error" id="titleError"></p>
+            </div>
+
+            <div class="form-row">
+              <div class="field-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" required>
+                <p class="field-error" id="dateError"></p>
+              </div>
+              <div class="field-group">
+                <label for="time">Time</label>
+                <input type="time" id="time" name="time" required>
+                <p class="field-error" id="timeError"></p>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="participants">Participants</label>
+              <input type="text" id="participants" name="participants" placeholder="Alex, Maya, Jordan" autocomplete="off">
+              <p class="field-hint">Separate names with commas.</p>
+            </div>
+
+            <div class="field-group">
+              <label for="status">Status</label>
+              <select id="status" name="status">
+                <option value="Confirmed">Confirmed</option>
+                <option value="Tentative">Tentative</option>
+                <option value="Planning">Planning</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button class="primary-button" type="submit" id="submitButton">Add meeting</button>
+              <button class="secondary-button" type="button" id="cancelEditButton" hidden>Cancel</button>
+            </div>
+          </form>
+        </aside>
+
+        <section class="meetings-panel" aria-labelledby="meetingsTitle">
+          <div class="section-heading meeting-heading">
+            <div>
+              <p class="eyebrow">Schedule board</p>
+              <h2 id="meetingsTitle">Meetings</h2>
+            </div>
+            <span class="count-badge" id="visibleCount">0 shown</span>
+          </div>
+
+          <div class="toolbar" aria-label="Meeting filters">
+            <div class="search-field">
+              <label for="searchInput">Search meetings</label>
+              <input type="search" id="searchInput" placeholder="Search title or participant">
+            </div>
+            <div class="filter-group">
+              <label for="statusFilter">Status</label>
+              <select id="statusFilter">
+                <option value="all">All statuses</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Tentative">Tentative</option>
+                <option value="Planning">Planning</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="meetingList" class="meeting-list" aria-live="polite"></div>
+
+          <div id="emptyState" class="empty-state" hidden>
+            <div class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M12 2a1 1 0 0 1 1 1v1h3.25A3.75 3.75 0 0 1 20 7.75v8.5A3.75 3.75 0 0 1 16.25 20h-8.5A3.75 3.75 0 0 1 4 16.25v-8.5A3.75 3.75 0 0 1 7.75 4H11V3a1 1 0 0 1 1-1Zm4.25 16A1.75 1.75 0 0 0 18 16.25V10H6v6.25C6 17.22 6.78 18 7.75 18h8.5ZM7.75 6C6.78 6 6 6.78 6 7.75V8h12v-.25C18 6.78 17.22 6 16.25 6h-8.5Z"/>
+              </svg>
+            </div>
+            <h3>No meetings found</h3>
+            <p>Create a new meeting or adjust your filters to bring the schedule back into view.</p>
+          </div>
+        </section>
+      </section>
+    </main>
   </div>
+
   <script src="script.js"></script>
 </body>
 </html>
